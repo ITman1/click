@@ -118,7 +118,12 @@ impl AuthProvider {
     // Copy the token and expiry out of the config into the refcells
     pub fn copy_up(&self) {
         let mut token = self.token.borrow_mut();
-        *token = self.config.access_token.clone();
+        if self.name == "oidc" {
+            *token = self.config.id_token.clone();
+        } else {
+            *token = self.config.access_token.clone();
+        }
+
         let mut expiry = self.expiry.borrow_mut();
         *expiry = self.config.expiry.clone();
     }
@@ -131,6 +136,10 @@ impl AuthProvider {
     }
 
     fn is_expired(&self) -> bool {
+        if self.name == "oidc" {
+            return false;
+        }
+
         let expiry = self.expiry.borrow();
         match *expiry {
             Some(ref e) => {
@@ -228,6 +237,7 @@ impl AuthProvider {
 #[derive(Debug, Deserialize, Clone)]
 pub struct AuthProviderConfig {
     #[serde(rename = "access-token")] pub access_token: Option<String>,
+    #[serde(rename = "id-token")] pub id_token: Option<String>,
     expiry: Option<String>,
 
     #[serde(rename = "cmd-args")] cmd_args: Option<String>,
